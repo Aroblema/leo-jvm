@@ -153,7 +153,7 @@ protected Class<?> findClass(String name) throws ClassNotFoundException {
 
 ##### - 如何理解双亲委派机制的设计？
 - 1. 避免类的重复加载：当父加载器已加载某类时，子加载器无需再加载一次，保证被加载类的**唯一性**
-- 2. 沙箱安全机制：**防止核心API库被随意篡改*
+- 2. 沙箱安全机制：**防止核心API库被随意篡改**
 
 ==沙箱安全见jvm-classloader/src/main/java/java/lang/String.java==
 ```java
