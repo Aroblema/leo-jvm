@@ -102,6 +102,98 @@ class Son2 extends Parent2 {
 ---------->945739838 // 任意int随机数
 ```
 
+##### - InvokeClassNotInitInterface.java.java
+```java
+/*
+ * Module: jvm-classloader
+ */
+public class InvokeClassNotInitInterface {
+    public static void main(String[] args) {
+        System.out.println("---------->" + Son3.num);
+    }
+}
+interface Parent3 {
+    TestDemo testDemo = new TestDemo();
+}
+class Son3 implements Parent3 {
+    public static int num = 1;
+}
+class TestDemo {
+    public TestDemo() {
+        System.out.println("---------->2");
+    }
+}
+```
+输出结果：
+```java
+---------->1 // 类的首次初始化使用也会初始化其父类，但此规则并不适用于接口
+```
+
+##### - NewArrayNotInitClass.java
+```java
+/*
+ * Module: jvm-classloader
+ */
+public class NewArrayNotInitClass {
+    public static void main(String[] args) {
+        Person[] people = new Person[4];
+    }
+}
+class Person {
+    static {
+        System.out.println("----------Person的构造函数");
+    }
+}
+```
+输出结果：空
+在ClassLoader类的文档注释中有这么一段话：
+```java
+/* 
+ * <p> <tt>Class</tt> objects for array classes are not created by class
+ * loaders, but are created automatically as required by the Java runtime.
+ * The class loader for an array class, as returned by {@link
+ * Class#getClassLoader()} is the same as the class loader for its element
+ * type; if the element type is a primitive type, then the array class has no
+ * class loader.
+ */
+数组类的Class对象不是由类加载器加载的
+```
+
+##### - ClassReadyAndInit.java
+```java
+/*
+ * Module: jvm-classloader
+ */
+public class ClassReadyAndInit {
+    public static void main(String[] args) {
+        Singleton singleton = Singleton.getInstance();
+        System.out.println("通过单例访问对象A：" + Singleton.A);
+        System.out.println("通过单例访问对象B：" + Singleton.B);
+    }
+}
+class Singleton {
+    public static int A;
+    private static Singleton singleton = new Singleton();
+    public Singleton() {
+        A++;
+        B++;
+        System.out.println("A: " + A);
+        System.out.println("B: " + B);
+    }
+    public static int B = 0;
+    public static Singleton getInstance() {
+        return singleton;
+    }
+}
+```
+输出结果：
+```
+A: 1
+B: 1
+通过单例访问对象A：1
+通过单例访问对象B：0
+```
+
 ### 2. 类加载器与双亲委派
 类的加载由类加载器实现，Java里有如下几种类加载器：
 - 启动类加载器：负责加载支撑JVM运行，位于JRE的lib目录下的核心类库，如rt.jar、chartset.jar等
@@ -143,7 +235,7 @@ protected Class<?> findClass(String name) throws ClassNotFoundException {
 ==见com.leo.classloader.MyClassLoaderTest==
 
 #### 2.2 双亲委派机制
-[核心代码请见](#--loadClass(String,-boolean))
+[核心代码请见loadClass(String, boolean)](#--loadClass(String,-boolean))
 ##### - 核心流程
 - 首先，检查指定名称的类是否已经加载过，如果加载过，就不需要再加载，直接返回
 - 如果此类没有加载过，那么判断是否存在父加载器。如果有父加载器，则委托父加载器加载（即调用parent.loadClass(name, false);），或调用bootstrap类加载器加载
@@ -193,4 +285,4 @@ Exception in thread "main" java.lang.SecurityException: Prohibited package name:
 ```
 分析：
 报安全异常，禁止的包名称：java.lang。就结果而言，此时已打破双亲委派尝试加载自定义String类。
-显然jdk对核心类库有安全保护机制，并不允许外部随意加载。同时，运行结果也正印证了这一点。
+显然jdk对核心类库有安全保护机制，并不允许外部随意加载。运行的结果也正印证了这一点。
